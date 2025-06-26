@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npx create-electron-vite:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm run electron:dev:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(cross-env:*)",
+      "Bash(IS_DEV=true npx electron .)",
+      "Bash(npm install:*)"
+    ],
+    "deny": []
+  }
+}
