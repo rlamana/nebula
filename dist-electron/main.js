@@ -31,7 +31,8 @@ function createWindow() {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    titleBarStyle: "default",
+    titleBarStyle: "hiddenInset",
+    // Hide title bar but keep window controls
     title: "Nebula - PSD & TIFF Inspector",
     webPreferences: {
       preload: preloadPath,

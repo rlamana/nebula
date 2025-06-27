@@ -48,13 +48,22 @@ export function ResizableSidebar({
   }, [width, minWidth, maxWidth])
 
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <div 
         ref={sidebarRef}
         style={{ width: `${width}px` }}
-        className="relative bg-black/30 backdrop-blur-sm border-r border-white/10 flex-shrink-0 overflow-hidden"
+        className="relative bg-black/30 backdrop-blur-sm border-r border-white/10 flex-shrink-0 overflow-hidden flex flex-col"
       >
-        <div className="w-full h-full">
+        {/* Top draggable area with window button margin */}
+        <div 
+          className="h-8 bg-transparent flex items-center pl-20 pr-4 drag-region flex-shrink-0"
+          style={{ WebkitAppRegion: 'drag' } as any}
+        >
+          {/* Empty draggable area - window controls will be in the top-left */}
+        </div>
+        
+        {/* Sidebar content */}
+        <div className="flex-1 w-full no-drag overflow-hidden">
           <Sidebar onFileSelect={onFileSelect} selectedFile={selectedFile} />
         </div>
         

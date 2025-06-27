@@ -85,4 +85,12 @@
   .neon-glow {
     @apply drop-shadow-[0_0_10px_rgba(0,212,255,0.3)] hover:drop-shadow-[0_0_20px_rgba(0,212,255,0.5)] transition-all duration-300;
   }
+  
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
 }

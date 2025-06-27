@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { FileDropZone } from './components/FileDropZone'
 import { LayerTree } from './components/LayerTree'
-import { Header } from './components/Header'
 import { ResizableSidebar } from './components/ResizableSidebar'
 import type { ParsedPSD } from './types/psd'
 
@@ -67,13 +66,24 @@ function App() {
   }
 
   return (
-    <div className="h-screen bg-nebula-dark text-white overflow-hidden">
-      <Header />
-      
-      <div className="flex h-[calc(100vh-4rem)]">
+    <div className="h-screen bg-nebula-dark text-white overflow-hidden flex">
+      {/* Sidebar with full height and window button margin */}
+      <div className="flex flex-col">
         <ResizableSidebar onFileSelect={handleFileLoad} selectedFile={selectedFile} />
+      </div>
+      
+      {/* Main content area */}
+      <main className="flex-1 flex flex-col">
+        {/* Draggable titlebar area for main content */}
+        <div 
+          className="h-8 bg-transparent flex items-center px-4 drag-region flex-shrink-0"
+          style={{ WebkitAppRegion: 'drag' } as any}
+        >
+          {/* Empty draggable area for window movement */}
+        </div>
         
-        <main className="flex-1 flex">
+        {/* Main content */}
+        <div className="flex-1 flex no-drag">
           {!parsedFile ? (
             <div className="flex-1 flex items-center justify-center p-8">
               {!apiReady ? (
@@ -121,8 +131,8 @@ function App() {
               </div>
             </>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }
