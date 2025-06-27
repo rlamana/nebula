@@ -10,7 +10,10 @@
       "Bash(true)",
       "Bash(cross-env:*)",
       "Bash(IS_DEV=true npx electron .)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find:*)",
+      "Bash(npm run build:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

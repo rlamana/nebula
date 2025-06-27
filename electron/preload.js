@@ -4,6 +4,8 @@ console.log('Preload script starting...')
 
 const electronAPI = {
   parsePSD: (filePath) => ipcRenderer.invoke('parse-psd', filePath),
+  readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
+  getHomeDirectory: () => ipcRenderer.invoke('get-home-directory'),
 }
 
 // Use contextBridge if available, otherwise fall back to window

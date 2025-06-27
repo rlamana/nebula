@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { FileDropZone } from './components/FileDropZone'
 import { LayerTree } from './components/LayerTree'
 import { Header } from './components/Header'
-import { Sidebar } from './components/Sidebar'
+import { ResizableSidebar } from './components/ResizableSidebar'
 import type { ParsedPSD } from './types/psd'
 
 function App() {
   const [parsedFile, setParsedFile] = useState<ParsedPSD | null>(null)
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [apiReady, setApiReady] = useState(false)
 
@@ -49,6 +50,7 @@ function App() {
 
   const handleFileLoad = async (filePath: string) => {
     setIsLoading(true)
+    setSelectedFile(filePath)
     try {
       if (!window.electronAPI) {
         throw new Error('Electron API not available. Please restart the application.')
@@ -58,6 +60,7 @@ function App() {
     } catch (error) {
       console.error('Failed to parse file:', error)
       alert('Failed to parse file: ' + (error as Error).message)
+      setSelectedFile(null)
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +71,7 @@ function App() {
       <Header />
       
       <div className="flex h-[calc(100vh-4rem)]">
-        <Sidebar />
+        <ResizableSidebar onFileSelect={handleFileLoad} selectedFile={selectedFile} />
         
         <main className="flex-1 flex">
           {!parsedFile ? (
@@ -84,7 +87,7 @@ function App() {
             </div>
           ) : (
             <>
-              <div className="w-80 border-r border-white/10 bg-black/20">
+              <div className="flex-1 bg-black/20">
                 <LayerTree 
                   layers={parsedFile.children || []}
                   selectedLayer={selectedLayer}
@@ -92,15 +95,27 @@ function App() {
                 />
               </div>
               
-              <div className="flex-1 bg-black/5 p-4">
-                <div className="glass-card h-full p-6">
-                  <h2 className="text-xl font-semibold mb-4 gradient-text">
-                    {parsedFile.name || 'Untitled'}
-                  </h2>
-                  <div className="text-sm text-gray-400">
-                    <p>Dimensions: {parsedFile.width} × {parsedFile.height}px</p>
-                    <p>Color Mode: {parsedFile.colorMode}</p>
-                    <p>Layers: {parsedFile.children?.length || 0}</p>
+              <div className="w-60 border-l border-white/10 bg-black/10 p-4">
+                <div className="glass-card h-full p-4">
+                  <h3 className="text-lg font-semibold mb-3 gradient-text truncate" title={parsedFile.name || (selectedFile ? selectedFile.split('/').pop() || 'Untitled' : 'Untitled')}>
+                    {parsedFile.name || (selectedFile ? selectedFile.split('/').pop() || 'Untitled' : 'Untitled')}
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-300">
+                    <div>
+                      <span className="text-gray-400">Dimensions:</span>
+                      <br />
+                      <span className="text-white">{parsedFile.width} × {parsedFile.height}px</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Color Mode:</span>
+                      <br />
+                      <span className="text-white">{parsedFile.colorMode}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Layers:</span>
+                      <br />
+                      <span className="text-white">{parsedFile.children?.length || 0}</span>
+                    </div>
                   </div>
                 </div>
               </div>

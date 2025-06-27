@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron'
-import renderer from 'vite-plugin-electron-renderer'
 import path from 'node:path'
 
 export default defineConfig({
@@ -10,10 +9,8 @@ export default defineConfig({
     electron([
       {
         entry: 'electron/main.ts',
-        onstart(options) {
-          if (options.startup) {
-            options.startup(['--inspect=5858'])
-          }
+        onstart: () => {
+          // Don't auto-start electron - let the npm script handle it
         },
         vite: {
           build: {
@@ -28,10 +25,27 @@ export default defineConfig({
             }
           }
         }
+      },
+      {
+        entry: 'electron/preload.ts',
+        vite: {
+          build: {
+            sourcemap: false,
+            minify: false,
+            outDir: 'dist-electron',
+            rollupOptions: {
+              output: {
+                format: 'cjs'
+              }
+            }
+          }
+        }
       }
-    ]),
-    renderer()
+    ])
   ],
+  server: {
+    open: false
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')

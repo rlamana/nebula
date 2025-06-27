@@ -109,7 +109,7 @@ export function FileDropZone({ onFileLoad, isLoading }: FileDropZoneProps) {
             
             <div className="space-y-2">
               <h3 className="text-xl font-semibold">
-                {isLoading ? 'Processing file...' : 'Drop your PSD file here'}
+                {isLoading ? 'Processing file...' : 'Drop your PSD or TIFF file here'}
               </h3>
               <p className="text-gray-400 text-sm">
                 {isLoading 

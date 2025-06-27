@@ -9,7 +9,6 @@ export function Header() {
         </div>
         <div>
           <h1 className="text-xl font-bold gradient-text">Nebula</h1>
-          <p className="text-xs text-gray-400">PSD Structure Inspector</p>
         </div>
       </div>
     </header>
