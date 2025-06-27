@@ -20,7 +20,6 @@ interface FileTreeProps {
 export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>([])
   const [loading, setLoading] = useState(true)
-  const [volumePollingInterval, setVolumePollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const loadDirectoryContents = useCallback(async (dirPath: string): Promise<FileNode[]> => {
     if (!window.electronAPI?.readDirectory) {
@@ -77,7 +76,7 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
       console.log('Calling getMountedVolumes...')
       const volumes = await window.electronAPI.getMountedVolumes()
       console.log('Received volumes:', volumes)
-      return volumes.map(volume => ({
+      return volumes.map((volume: { name: string; path: string; type: string }) => ({
         name: volume.name,
         path: volume.path,
         type: 'volume' as const,
@@ -178,8 +177,6 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
         console.error('Error polling for volume changes:', error)
       }
     }, 5000)
-    
-    setVolumePollingInterval(interval)
     
     return () => {
       if (interval) {
