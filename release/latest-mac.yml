@@ -1,8 +1,11 @@
 version: 0.0.1
 files:
   - url: Nebula-0.0.1-arm64-mac.zip
-    sha512: eFzF/KVhIMbWbuXobwoxRM8fgxYgaYTttkbWN++ZgGlSKDVubnBcqsZBbIQhOJoIpoXV9uHUofp1++yEki0BTw==
+    sha512: 7ypXMBm0/CHAsv1no4fGqGEvMz0Yubn7hrxbOa9y0eTM3TbhVOILE8f6aZLRyADEHNDMyggBZEa0a2+SIqnCcw==
     size: 90683266
+  - url: Nebula-0.0.1-mac.zip
+    sha512: 2IHlLV7TD45XIb7+r+yIGmg3+re0Ic5BDS07C//fboZQwlwbVQ1G75iN/DGKMhFQizIEpqOFcd301MMqjUdNTg==
+    size: 95819717
 path: Nebula-0.0.1-arm64-mac.zip
-sha512: eFzF/KVhIMbWbuXobwoxRM8fgxYgaYTttkbWN++ZgGlSKDVubnBcqsZBbIQhOJoIpoXV9uHUofp1++yEki0BTw==
-releaseDate: '2025-06-27T14:44:38.880Z'
+sha512: 7ypXMBm0/CHAsv1no4fGqGEvMz0Yubn7hrxbOa9y0eTM3TbhVOILE8f6aZLRyADEHNDMyggBZEa0a2+SIqnCcw==
+releaseDate: '2025-06-27T16:57:19.345Z'
