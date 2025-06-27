@@ -188,15 +188,20 @@ ipcMain.handle("read-directory", async (_event, dirPath) => {
     const entries = await readdir(dirPath, { withFileTypes: true });
     const result = [];
     for (const entry of entries) {
-      const fullPath = join(dirPath, entry.name);
-      const stats = await stat(fullPath);
-      result.push({
-        name: entry.name,
-        path: fullPath,
-        type: entry.isDirectory() ? "directory" : "file",
-        size: stats.size,
-        modified: stats.mtime
-      });
+      try {
+        const fullPath = join(dirPath, entry.name);
+        const stats = await stat(fullPath);
+        result.push({
+          name: entry.name,
+          path: fullPath,
+          type: entry.isDirectory() ? "directory" : "file",
+          size: stats.size,
+          modified: stats.mtime
+        });
+      } catch (statError) {
+        console.warn(`Skipping file ${entry.name}: ${statError.message}`);
+        continue;
+      }
     }
     return result;
   } catch (error) {

@@ -57,6 +57,8 @@ export default {
           teal: '#00D4FF',
           magenta: '#FF6B9D',
           yellow: '#FFE066',
+          blue: '#4A9EFF',
+          purple: '#A855F7',
           glass: 'rgba(255, 255, 255, 0.1)',
         },
       },

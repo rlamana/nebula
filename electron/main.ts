@@ -217,16 +217,22 @@ ipcMain.handle('read-directory', async (_event, dirPath: string) => {
     const result = []
     
     for (const entry of entries) {
-      const fullPath = join(dirPath, entry.name)
-      const stats = await stat(fullPath)
-      
-      result.push({
-        name: entry.name,
-        path: fullPath,
-        type: entry.isDirectory() ? 'directory' : 'file',
-        size: stats.size,
-        modified: stats.mtime
-      })
+      try {
+        const fullPath = join(dirPath, entry.name)
+        const stats = await stat(fullPath)
+        
+        result.push({
+          name: entry.name,
+          path: fullPath,
+          type: entry.isDirectory() ? 'directory' : 'file',
+          size: stats.size,
+          modified: stats.mtime
+        })
+      } catch (statError) {
+        // Skip files that can't be stat'd (like broken symlinks, permission issues, etc.)
+        console.warn(`Skipping file ${entry.name}: ${(statError as Error).message}`)
+        continue
+      }
     }
     
     return result

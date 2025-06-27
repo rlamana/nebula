@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Folder, FolderOpen, FileImage } from 'lucide-react'
+import { ChevronRight, Folder, FolderOpen, FileImage, Home, HardDrive } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface FileNode {
   name: string
   path: string
-  type: 'file' | 'directory'
+  type: 'file' | 'directory' | 'root'
   children?: FileNode[]
   isExpanded?: boolean
+  icon?: 'home' | 'computer'
 }
 
 interface FileTreeProps {
@@ -64,11 +65,35 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
   const initializeFileTree = useCallback(async () => {
     setLoading(true)
     try {
-      const initialPath = rootPath || await window.electronAPI?.getHomeDirectory?.()
-      if (initialPath) {
-        const contents = await loadDirectoryContents(initialPath)
-        setFileTree(contents)
+      const homeDir = await window.electronAPI?.getHomeDirectory?.()
+      
+      // Create root structure with Home and Computer
+      const rootStructure: FileNode[] = [
+        {
+          name: 'Home',
+          path: homeDir || '/Users',
+          type: 'root',
+          icon: 'home',
+          children: [],
+          isExpanded: true // Start with Home expanded
+        },
+        {
+          name: 'Computer',
+          path: '/',
+          type: 'root',
+          icon: 'computer',
+          children: [],
+          isExpanded: false
+        }
+      ]
+      
+      // Load initial Home directory contents
+      if (homeDir) {
+        const homeContents = await loadDirectoryContents(homeDir)
+        rootStructure[0].children = homeContents
       }
+      
+      setFileTree(rootStructure)
     } catch (error) {
       console.error('Failed to initialize file tree:', error)
     } finally {
@@ -83,7 +108,7 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
   const toggleDirectory = useCallback(async (path: string) => {
     const updateNode = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
-        if (node.path === path && node.type === 'directory') {
+        if (node.path === path && (node.type === 'directory' || node.type === 'root')) {
           if (!node.isExpanded && (!node.children || node.children.length === 0)) {
             // Load children when expanding for the first time
             loadDirectoryContents(path).then(children => {
@@ -101,8 +126,19 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
       })
     }
 
+    // For root nodes, immediately toggle and load if needed
+    const rootNode = fileTree.find(node => node.path === path && node.type === 'root')
+    if (rootNode && !rootNode.isExpanded && (!rootNode.children || rootNode.children.length === 0)) {
+      // Load children for root node when expanding
+      const children = await loadDirectoryContents(path)
+      setFileTree(currentTree => 
+        updateNodeChildren(currentTree, path, children)
+      )
+      return
+    }
+
     setFileTree(updateNode)
-  }, [loadDirectoryContents])
+  }, [loadDirectoryContents, fileTree])
 
   const updateNodeChildren = (nodes: FileNode[], targetPath: string, children: FileNode[]): FileNode[] => {
     return nodes.map(node => {
@@ -121,10 +157,31 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
   }, [onFileSelect])
 
   const renderFileNode = (node: FileNode, depth: number = 0) => {
-    const isDirectory = node.type === 'directory'
+    const isDirectory = node.type === 'directory' || node.type === 'root'
     const isExpanded = node.isExpanded || false
     const hasChildren = node.children && node.children.length > 0
-    const isSelected = !isDirectory && selectedFile === node.path
+    const isSelected = node.type === 'file' && selectedFile === node.path
+    const isRootNode = node.type === 'root'
+
+    const getIcon = () => {
+      if (isRootNode) {
+        return node.icon === 'home' ? (
+          <Home className="w-4 h-4 text-nebula-blue" />
+        ) : (
+          <HardDrive className="w-4 h-4 text-nebula-purple" />
+        )
+      }
+      
+      if (node.type === 'directory') {
+        return isExpanded ? (
+          <FolderOpen className="w-4 h-4 text-nebula-yellow" />
+        ) : (
+          <Folder className="w-4 h-4 text-nebula-yellow" />
+        )
+      }
+      
+      return <FileImage className="w-4 h-4 text-nebula-teal" />
+    }
 
     return (
       <div key={node.path} className="select-none">
@@ -138,6 +195,7 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
                 ? 'hover:bg-white/5' 
                 : 'hover:bg-nebula-teal/10'
             }
+            ${isRootNode ? 'font-medium' : ''}
           `}
           style={{ 
             paddingLeft: `${8 + depth * 16}px`
@@ -161,19 +219,11 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
           )}
           
           <div className="mr-2 flex-shrink-0">
-            {isDirectory ? (
-              isExpanded ? (
-                <FolderOpen className="w-4 h-4 text-nebula-yellow" />
-              ) : (
-                <Folder className="w-4 h-4 text-nebula-yellow" />
-              )
-            ) : (
-              <FileImage className="w-4 h-4 text-nebula-teal" />
-            )}
+            {getIcon()}
           </div>
           
           <span 
-            className="text-sm text-gray-200 whitespace-nowrap" 
+            className={`text-sm whitespace-nowrap ${isRootNode ? 'text-white' : 'text-gray-200'}`}
             title={node.name}
           >
             {node.name}
