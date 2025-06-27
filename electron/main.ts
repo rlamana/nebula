@@ -55,6 +55,7 @@ function createWindow(): void {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+    app.quit() // Quit the application when main window is closed
   })
 
   if (isDev) {

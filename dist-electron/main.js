@@ -46,6 +46,7 @@ function createWindow() {
   });
   mainWindow.on("closed", () => {
     mainWindow = null;
+    app.quit();
   });
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
