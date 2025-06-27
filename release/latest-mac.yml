@@ -1,0 +1,8 @@
+version: 0.0.1
+files:
+  - url: Nebula-0.0.1-arm64-mac.zip
+    sha512: eFzF/KVhIMbWbuXobwoxRM8fgxYgaYTttkbWN++ZgGlSKDVubnBcqsZBbIQhOJoIpoXV9uHUofp1++yEki0BTw==
+    size: 90683266
+path: Nebula-0.0.1-arm64-mac.zip
+sha512: eFzF/KVhIMbWbuXobwoxRM8fgxYgaYTttkbWN++ZgGlSKDVubnBcqsZBbIQhOJoIpoXV9uHUofp1++yEki0BTw==
+releaseDate: '2025-06-27T14:44:38.880Z'

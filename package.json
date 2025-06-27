@@ -63,8 +63,10 @@
     "appId": "com.nebula.app",
     "productName": "Nebula",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
+    "icon": "build/icon",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -78,7 +80,10 @@
       "target": [
         {
           "target": "zip",
-          "arch": ["arm64", "x64"]
+          "arch": [
+            "arm64",
+            "x64"
+          ]
         }
       ],
       "category": "public.app-category.graphics-design"

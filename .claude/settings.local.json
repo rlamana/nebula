@@ -15,7 +15,10 @@
       "Bash(npm run build:*)",
       "Bash(ls:*)",
       "Bash(grep:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(mv:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }
