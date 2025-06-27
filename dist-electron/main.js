@@ -6,10 +6,13 @@ import { fileURLToPath } from "node:url";
 import { initializeCanvas, readPsd } from "ag-psd";
 import { createCanvas } from "canvas";
 import UTIF from "utif";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const isDev = process.env.IS_DEV === "true";
+const execAsync = promisify(exec);
 initializeCanvas(createCanvas);
 console.log("Canvas initialized for ag-psd");
 let mainWindow = null;
@@ -18,7 +21,7 @@ function createWindow() {
     mainWindow.focus();
     return;
   }
-  const preloadPath = isDev ? join(process.cwd(), "electron/preload.js") : join(__dirname, "preload.js");
+  const preloadPath = isDev ? join(process.cwd(), "dist-electron/preload.js") : join(__dirname, "preload.js");
   console.log("Loading preload script from:", preloadPath);
   console.log("Preload file exists:", existsSync(preloadPath));
   mainWindow = new BrowserWindow({
@@ -211,6 +214,135 @@ ipcMain.handle("read-directory", async (_event, dirPath) => {
 });
 ipcMain.handle("get-home-directory", async () => {
   return homedir();
+});
+async function getMountedVolumes() {
+  var _a, _b, _c;
+  const currentPlatform = platform();
+  const volumes = [];
+  console.log("Getting mounted volumes for platform:", currentPlatform);
+  try {
+    if (currentPlatform === "darwin") {
+      try {
+        const volumesDir = "/Volumes";
+        console.log("Reading volumes directory:", volumesDir);
+        const entries = await readdir(volumesDir, { withFileTypes: true });
+        console.log("Found entries in /Volumes:", entries.map((e) => e.name));
+        console.log("Entry details:", entries.map((e) => ({ name: e.name, isDirectory: e.isDirectory(), isSymbolicLink: e.isSymbolicLink() })));
+        for (const entry of entries) {
+          console.log("Processing entry:", entry.name, "isDirectory:", entry.isDirectory(), "isSymbolicLink:", entry.isSymbolicLink());
+          if (entry.isDirectory() || entry.isSymbolicLink()) {
+            const volumePath = join(volumesDir, entry.name);
+            try {
+              const statInfo = await stat(volumePath);
+              console.log("Stat info for", entry.name, ":", { isDirectory: statInfo.isDirectory(), isSymbolicLink: statInfo.isSymbolicLink() });
+              if (entry.name !== "Macintosh HD") {
+                console.log("Adding volume:", entry.name, "at path:", volumePath);
+                volumes.push({
+                  name: entry.name,
+                  path: volumePath,
+                  type: "volume"
+                });
+              } else {
+                console.log("Skipping system volume:", entry.name);
+              }
+            } catch (error) {
+              console.log("Could not access volume:", entry.name, error);
+              continue;
+            }
+          } else {
+            console.log("Skipping non-directory entry:", entry.name);
+          }
+        }
+      } catch (error) {
+        console.warn("Could not read /Volumes directory:", error);
+      }
+    } else if (currentPlatform === "linux") {
+      const mediaDirs = ["/media", "/mnt"];
+      for (const mediaDir of mediaDirs) {
+        try {
+          const entries = await readdir(mediaDir, { withFileTypes: true });
+          for (const entry of entries) {
+            if (entry.isDirectory()) {
+              const volumePath = join(mediaDir, entry.name);
+              try {
+                await stat(volumePath);
+                volumes.push({
+                  name: entry.name,
+                  path: volumePath,
+                  type: "volume"
+                });
+              } catch {
+                continue;
+              }
+            }
+          }
+        } catch {
+          continue;
+        }
+      }
+      try {
+        const userMediaDir = `/media/${process.env.USER || "user"}`;
+        const entries = await readdir(userMediaDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            const volumePath = join(userMediaDir, entry.name);
+            try {
+              await stat(volumePath);
+              if (!volumes.find((v) => v.path === volumePath)) {
+                volumes.push({
+                  name: entry.name,
+                  path: volumePath,
+                  type: "volume"
+                });
+              }
+            } catch {
+              continue;
+            }
+          }
+        }
+      } catch {
+      }
+    } else if (currentPlatform === "win32") {
+      try {
+        const { stdout } = await execAsync("wmic logicaldisk get size,freespace,caption,drivetype,volumename /format:csv");
+        const lines = stdout.split("\n").filter((line) => line.trim() && !line.startsWith("Node"));
+        for (const line of lines) {
+          const parts = line.split(",");
+          if (parts.length >= 6) {
+            const caption = (_a = parts[1]) == null ? void 0 : _a.trim();
+            const driveType = parseInt(((_b = parts[2]) == null ? void 0 : _b.trim()) || "0");
+            const volumeName = (_c = parts[5]) == null ? void 0 : _c.trim();
+            if (caption && (driveType === 2 || driveType === 5)) {
+              volumes.push({
+                name: volumeName || caption,
+                path: caption,
+                type: "volume"
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Could not get Windows volumes:", error);
+      }
+    }
+  } catch (error) {
+    console.error("Error getting mounted volumes:", error);
+  }
+  console.log("Returning volumes:", volumes);
+  return volumes;
+}
+ipcMain.handle("get-mounted-volumes", async () => {
+  console.log("IPC handler get-mounted-volumes called");
+  const result = await getMountedVolumes();
+  console.log("IPC handler returning:", result);
+  return result;
+});
+app.whenReady().then(async () => {
+  setTimeout(async () => {
+    console.log("Testing volume detection on startup...");
+    const testVolumes = await getMountedVolumes();
+    console.log("Test volumes found:", testVolumes);
+  }, 3e3);
 });
 ipcMain.handle("parse-psd", async (_event, filePath) => {
   var _a;

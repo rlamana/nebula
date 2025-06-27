@@ -6,7 +6,10 @@ const electronAPI = {
   parsePSD: (filePath: string) => ipcRenderer.invoke('parse-psd', filePath),
   readDirectory: (dirPath: string) => ipcRenderer.invoke('read-directory', dirPath),
   getHomeDirectory: () => ipcRenderer.invoke('get-home-directory'),
+  getMountedVolumes: () => ipcRenderer.invoke('get-mounted-volumes')
 }
+
+console.log('electronAPI object created:', Object.keys(electronAPI))
 
 // Use contextBridge if available, otherwise fall back to window
 if (typeof contextBridge !== 'undefined') {

@@ -3,8 +3,10 @@ console.log("Preload script starting...");
 const electronAPI = {
   parsePSD: (filePath) => ipcRenderer.invoke("parse-psd", filePath),
   readDirectory: (dirPath) => ipcRenderer.invoke("read-directory", dirPath),
-  getHomeDirectory: () => ipcRenderer.invoke("get-home-directory")
+  getHomeDirectory: () => ipcRenderer.invoke("get-home-directory"),
+  getMountedVolumes: () => ipcRenderer.invoke("get-mounted-volumes")
 };
+console.log("electronAPI object created:", Object.keys(electronAPI));
 if (typeof contextBridge !== "undefined") {
   try {
     contextBridge.exposeInMainWorld("electronAPI", electronAPI);

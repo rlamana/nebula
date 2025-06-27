@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Folder, FolderOpen, FileImage, Home, HardDrive } from 'lucide-react'
+import { ChevronRight, Folder, FolderOpen, FileImage, Home, HardDrive, Usb } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface FileNode {
   name: string
   path: string
-  type: 'file' | 'directory' | 'root'
+  type: 'file' | 'directory' | 'root' | 'volume'
   children?: FileNode[]
   isExpanded?: boolean
-  icon?: 'home' | 'computer'
+  icon?: 'home' | 'computer' | 'volume'
 }
 
 interface FileTreeProps {
@@ -20,6 +20,7 @@ interface FileTreeProps {
 export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>([])
   const [loading, setLoading] = useState(true)
+  const [volumePollingInterval, setVolumePollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   const loadDirectoryContents = useCallback(async (dirPath: string): Promise<FileNode[]> => {
     if (!window.electronAPI?.readDirectory) {
@@ -62,12 +63,50 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
     }
   }, [])
 
+  const loadMountedVolumes = useCallback(async (): Promise<FileNode[]> => {
+    console.log('loadMountedVolumes called')
+    console.log('window.electronAPI:', !!window.electronAPI)
+    console.log('Available API methods:', window.electronAPI ? Object.keys(window.electronAPI) : 'none')
+    
+    if (!window.electronAPI?.getMountedVolumes) {
+      console.log('getMountedVolumes API not available')
+      return []
+    }
+    
+    try {
+      console.log('Calling getMountedVolumes...')
+      const volumes = await window.electronAPI.getMountedVolumes()
+      console.log('Received volumes:', volumes)
+      return volumes.map(volume => ({
+        name: volume.name,
+        path: volume.path,
+        type: 'volume' as const,
+        icon: 'volume' as const,
+        children: [],
+        isExpanded: false
+      }))
+    } catch (error) {
+      console.error('Failed to load mounted volumes:', error)
+      return []
+    }
+  }, [])
+
   const initializeFileTree = useCallback(async () => {
     setLoading(true)
     try {
+      console.log('Initializing file tree...')
       const homeDir = await window.electronAPI?.getHomeDirectory?.()
+      console.log('Home directory:', homeDir)
       
-      // Create root structure with Home and Computer
+      const volumes = await loadMountedVolumes()
+      console.log('Initial volumes loaded:', volumes)
+      
+      // Debug: Show volume count
+      if (volumes.length > 0) {
+        console.log('VOLUMES DETECTED!', volumes)
+      }
+      
+      // Create root structure with Home, Computer, and mounted volumes
       const rootStructure: FileNode[] = [
         {
           name: 'Home',
@@ -84,8 +123,11 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
           icon: 'computer',
           children: [],
           isExpanded: false
-        }
+        },
+        ...volumes
       ]
+      
+      console.log('Root structure created:', rootStructure.map(n => ({ name: n.name, type: n.type, path: n.path })))
       
       // Load initial Home directory contents
       if (homeDir) {
@@ -94,21 +136,62 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
       }
       
       setFileTree(rootStructure)
+      console.log('File tree initialized with', rootStructure.length, 'root nodes')
     } catch (error) {
       console.error('Failed to initialize file tree:', error)
     } finally {
       setLoading(false)
     }
-  }, [rootPath, loadDirectoryContents])
+  }, [rootPath, loadDirectoryContents, loadMountedVolumes])
 
   useEffect(() => {
     initializeFileTree()
-  }, [initializeFileTree])
+    
+    // Start polling for volume changes every 5 seconds
+    const interval = setInterval(async () => {
+      try {
+        console.log('Polling for volume changes...')
+        const currentVolumes = await loadMountedVolumes()
+        const currentVolumesPaths = new Set(currentVolumes.map(v => v.path))
+        
+        setFileTree(currentTree => {
+          const existingVolumes = currentTree.filter(node => node.type === 'volume')
+          const existingVolumesPaths = new Set(existingVolumes.map(v => v.path))
+          
+          // Check if volumes have changed
+          const volumesChanged = currentVolumesPaths.size !== existingVolumesPaths.size ||
+            [...currentVolumesPaths].some(path => !existingVolumesPaths.has(path)) ||
+            [...existingVolumesPaths].some(path => !currentVolumesPaths.has(path))
+          
+          console.log('Volumes changed:', volumesChanged, 'Current:', currentVolumesPaths.size, 'Existing:', existingVolumesPaths.size)
+          
+          if (volumesChanged) {
+            console.log('Updating file tree with new volumes:', currentVolumes)
+            // Keep non-volume nodes and add current volumes
+            const nonVolumeNodes = currentTree.filter(node => node.type !== 'volume')
+            return [...nonVolumeNodes, ...currentVolumes]
+          }
+          
+          return currentTree
+        })
+      } catch (error) {
+        console.error('Error polling for volume changes:', error)
+      }
+    }, 5000)
+    
+    setVolumePollingInterval(interval)
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [initializeFileTree, loadMountedVolumes])
 
   const toggleDirectory = useCallback(async (path: string) => {
     const updateNode = (nodes: FileNode[]): FileNode[] => {
       return nodes.map(node => {
-        if (node.path === path && (node.type === 'directory' || node.type === 'root')) {
+        if (node.path === path && (node.type === 'directory' || node.type === 'root' || node.type === 'volume')) {
           if (!node.isExpanded && (!node.children || node.children.length === 0)) {
             // Load children when expanding for the first time
             loadDirectoryContents(path).then(children => {
@@ -126,10 +209,10 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
       })
     }
 
-    // For root nodes, immediately toggle and load if needed
-    const rootNode = fileTree.find(node => node.path === path && node.type === 'root')
-    if (rootNode && !rootNode.isExpanded && (!rootNode.children || rootNode.children.length === 0)) {
-      // Load children for root node when expanding
+    // For root and volume nodes, immediately toggle and load if needed
+    const targetNode = fileTree.find(node => node.path === path && (node.type === 'root' || node.type === 'volume'))
+    if (targetNode && !targetNode.isExpanded && (!targetNode.children || targetNode.children.length === 0)) {
+      // Load children for root/volume node when expanding
       const children = await loadDirectoryContents(path)
       setFileTree(currentTree => 
         updateNodeChildren(currentTree, path, children)
@@ -157,19 +240,23 @@ export function FileTree({ onFileSelect, rootPath, selectedFile }: FileTreeProps
   }, [onFileSelect])
 
   const renderFileNode = (node: FileNode, depth: number = 0) => {
-    const isDirectory = node.type === 'directory' || node.type === 'root'
+    const isDirectory = node.type === 'directory' || node.type === 'root' || node.type === 'volume'
     const isExpanded = node.isExpanded || false
     const hasChildren = node.children && node.children.length > 0
     const isSelected = node.type === 'file' && selectedFile === node.path
-    const isRootNode = node.type === 'root'
+    const isRootNode = node.type === 'root' || node.type === 'volume'
 
     const getIcon = () => {
-      if (isRootNode) {
+      if (node.type === 'root') {
         return node.icon === 'home' ? (
           <Home className="w-4 h-4 text-nebula-blue" />
         ) : (
           <HardDrive className="w-4 h-4 text-nebula-purple" />
         )
+      }
+      
+      if (node.type === 'volume') {
+        return <Usb className="w-4 h-4 text-nebula-magenta" />
       }
       
       if (node.type === 'directory') {
