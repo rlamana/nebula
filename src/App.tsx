@@ -83,7 +83,7 @@ function App() {
         </div>
         
         {/* Main content */}
-        <div className="flex-1 flex no-drag">
+        <div className="flex-1 flex no-drag overflow-hidden min-h-0">
           {!parsedFile ? (
             <div className="flex-1 flex items-center justify-center p-8">
               {!apiReady ? (
@@ -97,7 +97,7 @@ function App() {
             </div>
           ) : (
             <>
-              <div className="flex-1 bg-black/20">
+              <div className="flex-1 bg-black/20 overflow-hidden min-h-0">
                 <LayerTree 
                   layers={parsedFile.children || []}
                   selectedLayer={selectedLayer}

@@ -149,13 +149,13 @@ function LayerItem({ layer, depth, selectedLayer, onSelectLayer }: LayerItemProp
 
 export function LayerTree({ layers, selectedLayer, onSelectLayer }: LayerTreeProps) {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-4 border-b border-white/10">
+    <div className="h-full flex flex-col min-h-0">
+      <div className="p-4 border-b border-white/10 flex-shrink-0">
         <h2 className="text-lg font-semibold text-white mb-1">Layers</h2>
         <p className="text-xs text-gray-400">{layers.length} layers</p>
       </div>
       
-      <div className="p-2 space-y-1">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
         {layers.map((layer, index) => (
           <LayerItem
             key={`${layer.name}-${index}`}

@@ -18,7 +18,7 @@ export default defineConfig({
             minify: false,
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['ag-psd', 'utif', 'canvas'],
+              external: ['ag-psd', 'utif', 'canvas', 'sharp'],
               output: {
                 format: 'cjs'
               }
@@ -52,6 +52,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    exclude: ['ag-psd', 'utif', 'canvas']
+    exclude: ['ag-psd', 'utif', 'canvas', 'sharp']
   }
 })

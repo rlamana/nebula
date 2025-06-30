@@ -7,7 +7,7 @@ yarn-error.log*
 # Build outputs
 out/
 build/
-release/**/*.app
+release/
 
 # Environment variables
 .env

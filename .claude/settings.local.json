@@ -18,7 +18,14 @@
       "Bash(rm:*)",
       "Bash(chmod:*)",
       "Bash(mv:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm rebuild:*)",
+      "Bash(node:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }
